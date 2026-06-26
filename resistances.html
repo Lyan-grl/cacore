@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Résistances série et parallèle — Calcul résistance équivalente</title>
+  <meta name="description" content="Calcule la résistance équivalente de plusieurs résistances en série ou en parallèle. Ajoute autant de résistances que tu veux." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="site-logo">⚡ <span>calc</span>-elec</a>
+    <nav class="site-nav">
+      <a href="ohm.html">Loi d'Ohm</a>
+      <a href="led.html">LED</a>
+      <a href="puissance.html">Puissance</a>
+      <a href="resistances.html" class="active">Série / Parallèle</a>
+      <a href="batterie.html">Batterie</a>
+    </nav>
+  </div>
+</header>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="index.html">Accueil</a> › <span>Résistances série / parallèle</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>〰️ Résistances en série / parallèle</h1>
+      <p>Calcule la résistance équivalente de plusieurs résistances. Ajoute autant de résistances que nécessaire.</p>
+    </div>
+
+    <div class="calc-card">
+      <h2>Mode de montage</h2>
+
+      <div class="radio-group" id="mode-group">
+        <input type="radio" name="mode" id="mode-serie" value="serie" checked />
+        <label for="mode-serie">Série</label>
+        <input type="radio" name="mode" id="mode-para" value="parallele" />
+        <label for="mode-para">Parallèle</label>
+      </div>
+
+      <div class="resistor-list" id="resistor-list">
+        <!-- Items injectés par JS -->
+      </div>
+
+      <button class="btn btn-secondary" onclick="addResistor()" style="margin-bottom:24px">+ Ajouter une résistance</button>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calculerR()">Calculer</button>
+        <button class="btn btn-secondary" onclick="resetR()">Réinitialiser</button>
+      </div>
+
+      <div class="result-box" id="r-result">
+        <div class="result-label" id="r-label">Résistance équivalente</div>
+        <div class="result-value" id="r-value">—</div>
+        <div class="result-detail" id="r-detail"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Comment ça marche</h3>
+      <p><strong style="color:var(--white)">En série</strong> : les résistances s'additionnent directement.</p>
+      <div class="formula-row" style="margin-bottom:16px">
+        <span class="formula-pill">Req = R1 + R2 + R3 + …</span>
+      </div>
+      <p><strong style="color:var(--white)">En parallèle</strong> : l'inverse de l'équivalente est la somme des inverses.</p>
+      <div class="formula-row">
+        <span class="formula-pill">1/Req = 1/R1 + 1/R2 + 1/R3 + …</span>
+      </div>
+      <p style="margin-top:14px; font-size:.85rem; color:var(--muted)">
+        En parallèle, Req est toujours inférieure à la plus petite résistance du montage.
+      </p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    calc-elec · Outils open source pour l'électronique · Calculs effectués localement dans ton navigateur
+  </div>
+</footer>
+
+<script>
+  let count = 0;
+
+  function addResistor(val = '') {
+    count++;
+    const list = document.getElementById('resistor-list');
+    const item = document.createElement('div');
+    item.className = 'resistor-item';
+    item.id = 'r-item-' + count;
+    item.innerHTML = `
+      <span class="mono">R${count}</span>
+      <input type="number" id="r-inp-${count}" placeholder="ex : 470" min="0" step="any" value="${val}" />
+      <span class="mono">Ω</span>
+      <button class="btn-remove" onclick="removeResistor(${count})" title="Supprimer">✕</button>`;
+    list.appendChild(item);
+  }
+
+  function removeResistor(id) {
+    const el = document.getElementById('r-item-' + id);
+    if (el) el.remove();
+  }
+
+  // Init avec 3 résistances
+  addResistor(100); addResistor(220); addResistor(470);
+
+  document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', () => {
+    document.getElementById('r-result').className = 'result-box';
+  }));
+
+  function formatR(v) {
+    if (v >= 1e6) return (v / 1e6).toPrecision(5) + ' MΩ';
+    if (v >= 1e3) return (v / 1e3).toPrecision(5) + ' kΩ';
+    return parseFloat(v.toPrecision(5)) + ' Ω';
+  }
+
+  function calculerR() {
+    const inputs = Array.from(document.querySelectorAll('#resistor-list input'));
+    const vals = inputs.map(i => parseFloat(i.value)).filter(v => !isNaN(v) && v > 0);
+    const box = document.getElementById('r-result');
+
+    if (vals.length < 2) {
+      box.className = 'result-box result-error visible';
+      document.getElementById('r-value').textContent = 'Saisis au moins 2 valeurs valides.';
+      document.getElementById('r-detail').textContent = '';
+      return;
+    }
+
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    let req;
+
+    if (mode === 'serie') {
+      req = vals.reduce((sum, r) => sum + r, 0);
+    } else {
+      req = 1 / vals.reduce((sum, r) => sum + 1 / r, 0);
+    }
+
+    box.className = 'result-box visible';
+    document.getElementById('r-label').textContent = `Résistance équivalente (${mode})`;
+    document.getElementById('r-value').textContent = formatR(req);
+    document.getElementById('r-detail').textContent =
+      `${vals.length} résistances · ${vals.map(r => formatR(r)).join(' + ')}`;
+  }
+
+  function resetR() {
+    document.getElementById('resistor-list').innerHTML = '';
+    count = 0;
+    addResistor(); addResistor(); addResistor();
+    document.getElementById('r-result').className = 'result-box';
+  }
+</script>
+
+</body>
+</html>

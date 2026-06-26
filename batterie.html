@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autonomie batterie mAh — Calculateur en ligne</title>
+  <meta name="description" content="Calcule l'autonomie d'une batterie en fonction de sa capacité (mAh) et de la consommation de ton circuit. Résultat en heures et minutes." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="site-logo">⚡ <span>calc</span>-elec</a>
+    <nav class="site-nav">
+      <a href="ohm.html">Loi d'Ohm</a>
+      <a href="led.html">LED</a>
+      <a href="puissance.html">Puissance</a>
+      <a href="resistances.html">Série / Parallèle</a>
+      <a href="batterie.html" class="active">Batterie</a>
+    </nav>
+  </div>
+</header>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="index.html">Accueil</a> › <span>Autonomie batterie</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>🔌 Autonomie batterie</h1>
+      <p>Estime combien de temps une batterie peut alimenter ton circuit en fonction de sa capacité et de la consommation.</p>
+    </div>
+
+    <div class="calc-card">
+      <h2>Données de la batterie</h2>
+
+      <div class="fields">
+        <div class="field">
+          <label for="bat-mah">Capacité batterie</label>
+          <input type="number" id="bat-mah" placeholder="ex : 2000" min="0" step="any" />
+          <span class="unit">Milliampères-heure (mAh)</span>
+        </div>
+        <div class="field">
+          <label for="bat-conso">Consommation du circuit</label>
+          <input type="number" id="bat-conso" placeholder="ex : 50" min="0" step="any" />
+          <span class="unit">Milliampères (mA)</span>
+        </div>
+        <div class="field">
+          <label for="bat-eff">Efficacité estimée</label>
+          <input type="number" id="bat-eff" placeholder="85" min="1" max="100" step="1" value="85" />
+          <span class="unit">% (80–90 % recommandé)</span>
+        </div>
+      </div>
+
+      <details style="margin-bottom:20px">
+        <summary style="font-size:.82rem; color:var(--muted); cursor:pointer; font-family:var(--font-mono)">Consommations typiques ▾</summary>
+        <div style="margin-top:10px; font-size:.82rem; color:var(--muted); line-height:1.9">
+          Arduino Uno actif : ~50 mA<br>
+          Arduino Uno sleep : ~20 mA<br>
+          ESP32 actif Wi-Fi : ~160–240 mA<br>
+          ESP32 deep sleep : ~0.01 mA<br>
+          Raspberry Pi Zero 2W : ~300 mA<br>
+          LED standard : 20 mA<br>
+          Servo moteur (inactif) : ~5–10 mA
+        </div>
+      </details>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calculerBatterie()">Calculer</button>
+        <button class="btn btn-secondary" onclick="resetBat()">Réinitialiser</button>
+      </div>
+
+      <div class="result-box" id="bat-result">
+        <div class="result-label">Autonomie estimée</div>
+        <div class="result-value" id="bat-value">—</div>
+        <div class="result-detail" id="bat-detail"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Comment ça marche</h3>
+      <p>La durée est obtenue en divisant la capacité de la batterie par le courant consommé. Le facteur d'efficacité tient compte des pertes (régulateur, température, vieillissement).</p>
+      <div class="formula-row">
+        <span class="formula-pill">t = (mAh × efficacité) / I(mA)</span>
+      </div>
+      <p style="margin-top:14px; font-size:.85rem; color:var(--muted)">
+        Résultat en heures théoriques. En pratique, la durée réelle peut varier selon la température, le régime de décharge et le type de batterie (Li-ion, NiMH, alcaline…).
+      </p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    calc-elec · Outils open source pour l'électronique · Calculs effectués localement dans ton navigateur
+  </div>
+</footer>
+
+<script>
+  function calculerBatterie() {
+    const mah   = parseFloat(document.getElementById('bat-mah').value);
+    const conso = parseFloat(document.getElementById('bat-conso').value);
+    const eff   = parseFloat(document.getElementById('bat-eff').value);
+    const box   = document.getElementById('bat-result');
+
+    if ([mah, conso, eff].some(isNaN) || mah <= 0 || conso <= 0 || eff <= 0) {
+      box.className = 'result-box result-error visible';
+      document.getElementById('bat-value').textContent = 'Saisis des valeurs valides.';
+      document.getElementById('bat-detail').textContent = '';
+      return;
+    }
+
+    const heures = (mah * (eff / 100)) / conso;
+    const h = Math.floor(heures);
+    const min = Math.round((heures - h) * 60);
+
+    let display;
+    if (heures < 1) {
+      display = `${min} minute${min > 1 ? 's' : ''}`;
+    } else if (heures >= 24) {
+      const jours = (heures / 24).toFixed(1);
+      display = `${jours} jours (${h}h${min.toString().padStart(2,'0')})`;
+    } else {
+      display = `${h}h ${min.toString().padStart(2,'0')}min`;
+    }
+
+    box.className = 'result-box visible';
+    document.getElementById('bat-value').textContent = display;
+    document.getElementById('bat-detail').textContent =
+      `Batterie : ${mah} mAh · Conso : ${conso} mA · Efficacité : ${eff} % · Durée brute : ${heures.toFixed(2)} h`;
+  }
+
+  function resetBat() {
+    ['bat-mah','bat-conso'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('bat-eff').value = '85';
+    document.getElementById('bat-result').className = 'result-box';
+  }
+</script>
+
+</body>
+</html>

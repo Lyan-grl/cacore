@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Puissance électrique P=UI — Calculateur en ligne</title>
+  <meta name="description" content="Calculateur de puissance électrique en ligne. Calcule P, U ou I à partir de la formule P = U × I. Résultat en watts, milliwatts ou kilowatts." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="site-logo">⚡ <span>calc</span>-elec</a>
+    <nav class="site-nav">
+      <a href="ohm.html">Loi d'Ohm</a>
+      <a href="led.html">LED</a>
+      <a href="puissance.html" class="active">Puissance</a>
+      <a href="resistances.html">Série / Parallèle</a>
+      <a href="batterie.html">Batterie</a>
+    </nav>
+  </div>
+</header>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="index.html">Accueil</a> › <span>Puissance électrique</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>🔋 Puissance électrique</h1>
+      <p>Calcule la puissance, la tension ou le courant à partir de deux valeurs connues. P = U × I</p>
+    </div>
+
+    <div class="calc-card">
+      <h2>Valeur à calculer</h2>
+
+      <div class="radio-group" id="pw-target-group">
+        <input type="radio" name="pw-target" id="pw-P" value="P" checked />
+        <label for="pw-P">Puissance (P)</label>
+
+        <input type="radio" name="pw-target" id="pw-U" value="U" />
+        <label for="pw-U">Tension (U)</label>
+
+        <input type="radio" name="pw-target" id="pw-I" value="I" />
+        <label for="pw-I">Courant (I)</label>
+      </div>
+
+      <div class="fields" id="pw-fields"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calculerPuissance()">Calculer</button>
+        <button class="btn btn-secondary" onclick="resetPW()">Réinitialiser</button>
+      </div>
+
+      <div class="result-box" id="pw-result">
+        <div class="result-label" id="pw-result-label">Résultat</div>
+        <div class="result-value" id="pw-result-value">—</div>
+        <div class="result-detail" id="pw-result-detail"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Comment ça marche</h3>
+      <p>La puissance électrique exprime l'énergie transférée par unité de temps. C'est le produit de la tension et du courant.</p>
+      <div class="formula-row">
+        <span class="formula-pill">P = U × I</span>
+        <span class="formula-pill">U = P / I</span>
+        <span class="formula-pill">I = P / U</span>
+      </div>
+      <p style="margin-top:14px; font-size:.85rem; color:var(--muted)">
+        P = puissance en Watts (W) · U = tension en Volts (V) · I = courant en Ampères (A)
+      </p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    calc-elec · Outils open source pour l'électronique · Calculs effectués localement dans ton navigateur
+  </div>
+</footer>
+
+<script>
+  const pwDefs = {
+    P: { label: 'Puissance (P)', unit: 'Watts (W)',   placeholder: 'ex : 60' },
+    U: { label: 'Tension (U)',   unit: 'Volts (V)',   placeholder: 'ex : 12' },
+    I: { label: 'Courant (I)',   unit: 'Ampères (A)', placeholder: 'ex : 0.5' },
+  };
+
+  function buildPWFields() {
+    const target = document.querySelector('input[name="pw-target"]:checked').value;
+    const container = document.getElementById('pw-fields');
+    container.innerHTML = '';
+    ['P','U','I'].forEach(key => {
+      if (key === target) return;
+      const d = pwDefs[key];
+      container.innerHTML += `
+        <div class="field">
+          <label for="pw-inp-${key}">${d.label}</label>
+          <input type="number" id="pw-inp-${key}" placeholder="${d.placeholder}" min="0" step="any" />
+          <span class="unit">${d.unit}</span>
+        </div>`;
+    });
+    document.getElementById('pw-result').className = 'result-box';
+  }
+
+  document.querySelectorAll('input[name="pw-target"]').forEach(r => r.addEventListener('change', buildPWFields));
+  buildPWFields();
+
+  function formatW(v) {
+    if (v >= 1000) return (v / 1000).toPrecision(4) + ' kW';
+    if (v < 0.001) return (v * 1e6).toPrecision(4) + ' µW';
+    if (v < 1) return (v * 1000).toPrecision(4) + ' mW';
+    return parseFloat(v.toPrecision(5)) + ' W';
+  }
+
+  function formatGeneric(v, unit) {
+    if (v >= 1e3) return (v / 1e3).toPrecision(4) + ' k' + unit;
+    if (v < 0.001) return (v * 1e6).toPrecision(4) + ' µ' + unit;
+    if (v < 1) return (v * 1000).toPrecision(4) + ' m' + unit;
+    return parseFloat(v.toPrecision(5)) + ' ' + unit;
+  }
+
+  function calculerPuissance() {
+    const target = document.querySelector('input[name="pw-target"]:checked').value;
+    const vals = {};
+    ['P','U','I'].filter(k => k !== target).forEach(k => {
+      vals[k] = parseFloat(document.getElementById('pw-inp-' + k).value);
+    });
+
+    const box = document.getElementById('pw-result');
+    if (Object.values(vals).some(v => isNaN(v) || v <= 0)) {
+      box.className = 'result-box result-error visible';
+      document.getElementById('pw-result-value').textContent = 'Saisis des valeurs valides.';
+      document.getElementById('pw-result-detail').textContent = '';
+      return;
+    }
+
+    let result, label, formatted, detail;
+    if (target === 'P') {
+      result = vals.U * vals.I;
+      label = 'Puissance (P)';
+      formatted = formatW(result);
+      detail = `U = ${vals.U} V  ×  I = ${vals.I} A`;
+    } else if (target === 'U') {
+      result = vals.P / vals.I;
+      label = 'Tension (U)';
+      formatted = formatGeneric(result, 'V');
+      detail = `P = ${vals.P} W  ÷  I = ${vals.I} A`;
+    } else {
+      result = vals.P / vals.U;
+      label = 'Courant (I)';
+      formatted = formatGeneric(result, 'A');
+      detail = `P = ${vals.P} W  ÷  U = ${vals.U} V`;
+    }
+
+    box.className = 'result-box visible';
+    document.getElementById('pw-result-label').textContent = label;
+    document.getElementById('pw-result-value').textContent = formatted;
+    document.getElementById('pw-result-detail').textContent = detail;
+  }
+
+  function resetPW() {
+    document.querySelectorAll('#pw-fields input').forEach(i => i.value = '');
+    document.getElementById('pw-result').className = 'result-box';
+  }
+</script>
+
+</body>
+</html>

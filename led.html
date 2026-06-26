@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Résistance LED — Calcul de la résistance de limitation</title>
+  <meta name="description" content="Calcule facilement la résistance de limitation pour une LED. Entre la tension d'alimentation, la tension directe de la LED et le courant souhaité." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="site-logo">⚡ <span>calc</span>-elec</a>
+    <nav class="site-nav">
+      <a href="ohm.html">Loi d'Ohm</a>
+      <a href="led.html" class="active">LED</a>
+      <a href="puissance.html">Puissance</a>
+      <a href="resistances.html">Série / Parallèle</a>
+      <a href="batterie.html">Batterie</a>
+    </nav>
+  </div>
+</header>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="index.html">Accueil</a> › <span>Résistance pour LED</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>💡 Résistance pour LED</h1>
+      <p>Trouve la résistance de limitation à placer en série avec ta LED pour éviter de la griller.</p>
+    </div>
+
+    <div class="calc-card">
+      <h2>Données du circuit</h2>
+
+      <div class="fields">
+        <div class="field">
+          <label for="v-alim">Tension alimentation</label>
+          <input type="number" id="v-alim" placeholder="ex : 5 ou 12" min="0" step="any" />
+          <span class="unit">Volts (V)</span>
+        </div>
+        <div class="field">
+          <label for="v-led">Tension directe LED (Vf)</label>
+          <input type="number" id="v-led" placeholder="ex : 2.1" min="0" step="any" />
+          <span class="unit">Volts (V)</span>
+        </div>
+        <div class="field">
+          <label for="i-led">Courant LED souhaité</label>
+          <input type="number" id="i-led" placeholder="ex : 20" min="0" step="any" />
+          <span class="unit">Milliampères (mA)</span>
+        </div>
+      </div>
+
+      <details style="margin-bottom:20px">
+        <summary style="font-size:.82rem; color:var(--muted); cursor:pointer; font-family:var(--font-mono)">Valeurs typiques des LEDs ▾</summary>
+        <div style="margin-top:10px; font-size:.82rem; color:var(--muted); line-height:1.8">
+          LED rouge : Vf ≈ 1.8–2.2 V, I ≈ 20 mA<br>
+          LED verte : Vf ≈ 2.0–3.5 V, I ≈ 20 mA<br>
+          LED bleue / blanche : Vf ≈ 3.0–3.5 V, I ≈ 20 mA<br>
+          LED infrarouge : Vf ≈ 1.2–1.6 V, I ≈ 20–100 mA
+        </div>
+      </details>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calculerLED()">Calculer</button>
+        <button class="btn btn-secondary" onclick="resetLED()">Réinitialiser</button>
+      </div>
+
+      <div class="result-box" id="led-result">
+        <div class="result-label">Résistance recommandée</div>
+        <div class="result-value" id="led-value">—</div>
+        <div class="result-detail" id="led-detail"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Comment ça marche</h3>
+      <p>Sans résistance de limitation, la LED brûle immédiatement. La résistance absorbe la tension excédentaire et limite le courant à la valeur souhaitée.</p>
+      <div class="formula-row">
+        <span class="formula-pill">R = (Valim − Vled) / I</span>
+      </div>
+      <p style="margin-top:14px; font-size:.85rem; color:var(--muted)">
+        La résistance commerciale la plus proche supérieure est recommandée pour ne pas dépasser le courant maximum de la LED.
+      </p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    calc-elec · Outils open source pour l'électronique · Calculs effectués localement dans ton navigateur
+  </div>
+</footer>
+
+<script>
+  // Valeurs standard E24
+  const E24 = [10,11,12,13,15,16,18,20,22,24,27,30,33,36,39,43,47,51,56,62,68,75,82,91];
+
+  function closestE24(val) {
+    let best = null, bestDiff = Infinity;
+    for (let decade = 1; decade <= 10000000; decade *= 10) {
+      for (const base of E24) {
+        const r = base * decade;
+        if (r >= val && Math.abs(r - val) < bestDiff) {
+          bestDiff = Math.abs(r - val);
+          best = r;
+        }
+      }
+    }
+    return best;
+  }
+
+  function formatR(v) {
+    if (v >= 1e6) return (v / 1e6).toPrecision(3) + ' MΩ';
+    if (v >= 1e3) return (v / 1e3).toPrecision(3) + ' kΩ';
+    return parseFloat(v.toPrecision(4)) + ' Ω';
+  }
+
+  function calculerLED() {
+    const vAlim = parseFloat(document.getElementById('v-alim').value);
+    const vLed  = parseFloat(document.getElementById('v-led').value);
+    const iLed  = parseFloat(document.getElementById('i-led').value);
+
+    const box = document.getElementById('led-result');
+
+    if ([vAlim, vLed, iLed].some(isNaN) || iLed <= 0) {
+      box.className = 'result-box result-error visible';
+      document.getElementById('led-value').textContent = 'Saisis des valeurs valides.';
+      document.getElementById('led-detail').textContent = '';
+      return;
+    }
+    if (vLed >= vAlim) {
+      box.className = 'result-box result-error visible';
+      document.getElementById('led-value').textContent = 'Vf doit être inférieure à Valim.';
+      document.getElementById('led-detail').textContent = '';
+      return;
+    }
+
+    const iA = iLed / 1000;
+    const rExact = (vAlim - vLed) / iA;
+    const rStd = closestE24(rExact);
+    const iReal = ((vAlim - vLed) / rStd * 1000).toFixed(1);
+
+    box.className = 'result-box visible';
+    document.getElementById('led-value').textContent = formatR(rStd) + ' (standard E24)';
+    document.getElementById('led-detail').textContent =
+      `Valeur exacte : ${parseFloat(rExact.toPrecision(4))} Ω · Courant réel avec ${formatR(rStd)} : ${iReal} mA · Puissance dissipée : ${((rStd * iA * iA) * 1000).toFixed(1)} mW`;
+  }
+
+  function resetLED() {
+    ['v-alim','v-led','i-led'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('led-result').className = 'result-box';
+  }
+</script>
+
+</body>
+</html>
