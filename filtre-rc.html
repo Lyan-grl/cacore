@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fréquence de coupure filtre RC — 1er et 2e ordre — CaCore</title>
+  <meta name="description" content="Calcule la fréquence de coupure d'un filtre RC du 1er ou 2e ordre. Passe-bas, passe-haut, passe-bande. Formule f = 1/(2πRC)." />
+  <link rel="stylesheet" href="../../style.css" />
+  <style>
+    .tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--border);}
+    .tab-btn{font-family:var(--font-mono);font-size:.85rem;padding:10px 22px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;transition:color .2s,border-color .2s;margin-bottom:-1px;}
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+    .tab-content{display:none;} .tab-content.active{display:block;}
+    .filter-type-group{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
+    .filter-type-group input[type="radio"]{display:none;}
+    .filter-type-group label{font-family:var(--font-mono);font-size:.82rem;padding:7px 16px;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--muted);transition:all .2s;}
+    .filter-type-group input[type="radio"]:checked+label{border-color:var(--accent2);color:var(--accent2);background:rgba(79,156,255,.1);}
+    .filter-explain{background:var(--bg);border-left:3px solid var(--accent2);border-radius:0 6px 6px 0;padding:12px 16px;font-size:.85rem;color:var(--text);margin-bottom:24px;display:none;}
+    .filter-explain.visible{display:block;}
+    .field-row{display:flex;gap:8px;align-items:flex-end;}
+    .field-row .field{flex:1;} .field-row .field-unit{flex:0 0 90px;}
+  </style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="../../index.html">Accueil</a> ›
+      <a href="../electronique.html">Électronique</a> ›
+      <span>Filtre RC</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>📡 Fréquence de coupure — Filtre RC</h1>
+      <p>Calcule la fréquence de coupure d'un filtre RC passe-bas, passe-haut ou passe-bande.</p>
+    </div>
+
+    <div class="calc-card">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('o1',this)">1er ordre</button>
+        <button class="tab-btn" onclick="switchTab('o2',this)">2e ordre</button>
+      </div>
+
+      <!-- 1er ordre -->
+      <div class="tab-content active" id="tab-o1">
+        <h2>Type de filtre</h2>
+        <div class="filter-type-group">
+          <input type="radio" name="type1" id="t1-pb" value="passe-bas" checked/><label for="t1-pb">Passe-bas</label>
+          <input type="radio" name="type1" id="t1-ph" value="passe-haut"/><label for="t1-ph">Passe-haut</label>
+        </div>
+        <div class="filter-explain visible" id="ex1-passe-bas">🔉 <strong>Passe-bas</strong> — laisse passer les basses fréquences, bloque les hautes. Utilisé pour lisser un signal ou filtrer le bruit.</div>
+        <div class="filter-explain" id="ex1-passe-haut">🔊 <strong>Passe-haut</strong> — laisse passer les hautes fréquences, bloque les basses. Utilisé pour éliminer la composante continue (DC).</div>
+        <h2>Valeur à calculer</h2>
+        <div class="radio-group">
+          <input type="radio" name="tgt1" id="tg1-f" value="f" checked/><label for="tg1-f">Fréquence (f)</label>
+          <input type="radio" name="tgt1" id="tg1-r" value="R"/><label for="tg1-r">Résistance (R)</label>
+          <input type="radio" name="tgt1" id="tg1-c" value="C"/><label for="tg1-c">Condensateur (C)</label>
+        </div>
+        <div id="fields1"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="calc1()">Calculer</button>
+          <button class="btn btn-secondary" onclick="reset1()">Réinitialiser</button>
+        </div>
+        <div class="result-box" id="res1">
+          <div class="result-label" id="res1-l">Fréquence de coupure</div>
+          <div class="result-value" id="res1-v">—</div>
+          <div class="result-detail" id="res1-d"></div>
+        </div>
+      </div>
+
+      <!-- 2e ordre -->
+      <div class="tab-content" id="tab-o2">
+        <h2>Type de filtre</h2>
+        <div class="filter-type-group">
+          <input type="radio" name="type2" id="t2-pb" value="passe-bas" checked/><label for="t2-pb">Passe-bas</label>
+          <input type="radio" name="type2" id="t2-ph" value="passe-haut"/><label for="t2-ph">Passe-haut</label>
+          <input type="radio" name="type2" id="t2-bd" value="passe-bande"/><label for="t2-bd">Passe-bande</label>
+        </div>
+        <div class="filter-explain visible" id="ex2-passe-bas">🔉 <strong>Passe-bas 2e ordre</strong> — coupure plus franche (−40 dB/décade). Plus efficace qu'au 1er ordre.</div>
+        <div class="filter-explain" id="ex2-passe-haut">🔊 <strong>Passe-haut 2e ordre</strong> — atténuation forte des basses fréquences (−40 dB/décade).</div>
+        <div class="filter-explain" id="ex2-passe-bande">🎯 <strong>Passe-bande</strong> — laisse passer une plage autour d'une fréquence centrale f0, définie par Q.</div>
+
+        <div id="fields2-std">
+          <h2 style="margin-bottom:16px">Composants</h2>
+          <div class="fields">
+            <div class="field"><label for="r1o2">Résistance R1</label><input type="number" id="r1o2" placeholder="ex : 10000" min="0" step="any"/><span class="unit">Ohms (Ω)</span></div>
+            <div class="field"><label for="r2o2">Résistance R2</label><input type="number" id="r2o2" placeholder="ex : 10000" min="0" step="any"/><span class="unit">Ohms (Ω)</span></div>
+            <div class="field"><label>Condensateur C1</label><div class="field-row"><div class="field" style="margin:0"><input type="number" id="c1o2" placeholder="ex : 100" min="0" step="any"/></div><div class="field field-unit" style="margin:0"><select id="c1u2"><option value="1e-12">pF</option><option value="1e-9">nF</option><option value="1e-6" selected>µF</option><option value="1e-3">mF</option></select></div></div></div>
+            <div class="field"><label>Condensateur C2</label><div class="field-row"><div class="field" style="margin:0"><input type="number" id="c2o2" placeholder="ex : 100" min="0" step="any"/></div><div class="field field-unit" style="margin:0"><select id="c2u2"><option value="1e-12">pF</option><option value="1e-9">nF</option><option value="1e-6" selected>µF</option><option value="1e-3">mF</option></select></div></div></div>
+          </div>
+        </div>
+
+        <div id="fields2-bande" style="display:none">
+          <h2 style="margin-bottom:16px">Composants</h2>
+          <div class="fields">
+            <div class="field"><label for="rbo2">Résistance R</label><input type="number" id="rbo2" placeholder="ex : 10000" min="0" step="any"/><span class="unit">Ohms (Ω)</span></div>
+            <div class="field"><label>Condensateur C</label><div class="field-row"><div class="field" style="margin:0"><input type="number" id="cbo2" placeholder="ex : 100" min="0" step="any"/></div><div class="field field-unit" style="margin:0"><select id="cbu2"><option value="1e-12">pF</option><option value="1e-9">nF</option><option value="1e-6" selected>µF</option><option value="1e-3">mF</option></select></div></div></div>
+            <div class="field"><label for="qo2">Facteur de qualité Q</label><input type="number" id="qo2" placeholder="ex : 0.707" min="0" step="any" value="0.707"/><span class="unit">0.707 = Butterworth</span></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="calc2()">Calculer</button>
+          <button class="btn btn-secondary" onclick="reset2()">Réinitialiser</button>
+        </div>
+        <div class="result-box" id="res2">
+          <div class="result-label" id="res2-l">Fréquence de coupure</div>
+          <div class="result-value" id="res2-v">—</div>
+          <div class="result-detail" id="res2-d"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Les trois types de filtres</h3>
+      <p><strong style="color:var(--white)">Passe-bas</strong> — laisse passer les fréquences sous fc. Ex : lisser un signal capteur.</p>
+      <p><strong style="color:var(--white)">Passe-haut</strong> — laisse passer les fréquences au-dessus de fc. Ex : supprimer la composante DC.</p>
+      <p><strong style="color:var(--white)">Passe-bande</strong> — laisse passer une plage autour de f0. Ex : filtre radio.</p>
+      <div class="formula-row" style="margin-top:16px">
+        <span class="formula-pill">fc = 1 / (2π·R·C)</span>
+        <span class="formula-pill">fc = 1 / (2π·√(R1·R2·C1·C2))</span>
+      </div>
+      <p style="margin-top:14px;font-size:.85rem;color:var(--muted)">1er ordre : −20 dB/décade · 2e ordre : −40 dB/décade · Q = 0.707 → Butterworth</p>
+    </div>
+
+    <a href="../../comprendre/superieur/filtrage-rc.html" class="tool-card" style="margin-top:12px;flex-direction:row;align-items:center;gap:16px;text-decoration:none">
+      <span style="font-size:1.5rem">📚</span>
+      <div>
+        <div style="font-family:var(--font-mono);font-size:.85rem;color:var(--white)">Comprendre cette notion</div>
+        <div style="font-size:.8rem;color:var(--muted)">Filtrage RC — fiche complète, 1er et 2e ordre</div>
+      </div>
+      <span class="tool-card-link" style="margin-left:auto">Lire →</span>
+    </a>
+
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="../../nav.js"></script>
+<script>
+  function switchTab(id,btn){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');btn.classList.add('active');}
+
+  // Type filtre 1
+  document.querySelectorAll('input[name="type1"]').forEach(r=>r.addEventListener('change',function(){
+    ['passe-bas','passe-haut'].forEach(t=>{document.getElementById('ex1-'+t).classList.remove('visible');});
+    document.getElementById('ex1-'+this.value).classList.add('visible');
+    document.getElementById('res1').className='result-box';
+  }));
+
+  // Type filtre 2
+  document.querySelectorAll('input[name="type2"]').forEach(r=>r.addEventListener('change',function(){
+    ['passe-bas','passe-haut','passe-bande'].forEach(t=>document.getElementById('ex2-'+t).classList.remove('visible'));
+    document.getElementById('ex2-'+this.value).classList.add('visible');
+    const bd=this.value==='passe-bande';
+    document.getElementById('fields2-std').style.display=bd?'none':'block';
+    document.getElementById('fields2-bande').style.display=bd?'block':'none';
+    document.getElementById('res2').className='result-box';
+  }));
+
+  // Champs 1er ordre dynamiques
+  function buildFields1(){
+    const t=document.querySelector('input[name="tgt1"]:checked').value;
+    const defs={f:{label:'Fréquence de coupure (fc)',ph:'ex : 1000',suf:'Hz'},R:{label:'Résistance (R)',ph:'ex : 10000',suf:'Ω'},C:null};
+    document.getElementById('fields1').innerHTML=['f','R','C'].filter(k=>k!==t).map(k=>{
+      if(k==='C') return `<div class="fields" style="margin-bottom:16px"><div class="field"><label>Condensateur (C)</label><div class="field-row"><div class="field" style="margin:0"><input type="number" id="i1-C" placeholder="ex : 100" min="0" step="any"/></div><div class="field field-unit" style="margin:0"><select id="i1-Cu"><option value="1e-12">pF</option><option value="1e-9">nF</option><option value="1e-6" selected>µF</option><option value="1e-3">mF</option></select></div></div></div></div>`;
+      return `<div class="fields" style="margin-bottom:16px"><div class="field"><label for="i1-${k}">${defs[k].label}</label><input type="number" id="i1-${k}" placeholder="${defs[k].ph}" min="0" step="any"/><span class="unit">${defs[k].suf}</span></div></div>`;
+    }).join('');
+    document.getElementById('res1').className='result-box';
+  }
+  document.querySelectorAll('input[name="tgt1"]').forEach(r=>r.addEventListener('change',buildFields1));
+  buildFields1();
+
+  // Formatage
+  function fmtF(f){return f>=1e6?(f/1e6).toPrecision(4)+' MHz':f>=1e3?(f/1e3).toPrecision(4)+' kHz':f<1?(f*1000).toPrecision(4)+' mHz':parseFloat(f.toPrecision(5))+' Hz';}
+  function fmtR(v){return v>=1e6?(v/1e6).toPrecision(4)+' MΩ':v>=1e3?(v/1e3).toPrecision(4)+' kΩ':parseFloat(v.toPrecision(4))+' Ω';}
+  function fmtC(v){return v<1e-9?(v*1e12).toPrecision(4)+' pF':v<1e-6?(v*1e9).toPrecision(4)+' nF':v<1e-3?(v*1e6).toPrecision(4)+' µF':(v*1e3).toPrecision(4)+' mF';}
+
+  function calc1(){
+    const t=document.querySelector('input[name="tgt1"]:checked').value;
+    const pi2=2*Math.PI;
+    let R,C,f;
+    if(t!=='R') R=parseFloat(document.getElementById('i1-R')?.value);
+    if(t!=='C'){const v=parseFloat(document.getElementById('i1-C')?.value),u=parseFloat(document.getElementById('i1-Cu')?.value||'1e-6');C=v*u;}
+    if(t!=='f') f=parseFloat(document.getElementById('i1-f')?.value);
+    if([R,C,f].filter((_,i)=>['R','C','f'].filter(k=>k!==t)[i]!==undefined).some(v=>isNaN(v)||v<=0)){err1('Saisis des valeurs valides.');return;}
+    if(t==='f'){const fc=1/(pi2*R*C);ok1('Fréquence de coupure (fc)',fmtF(fc),`R=${fmtR(R)} · C=${fmtC(C)}`);}
+    else if(t==='R'){const r=1/(pi2*f*C);ok1('Résistance (R)',fmtR(r),`fc=${fmtF(f)} · C=${fmtC(C)}`);}
+    else{const c=1/(pi2*f*R);ok1('Condensateur (C)',fmtC(c),`fc=${fmtF(f)} · R=${fmtR(R)}`);}
+  }
+
+  function calc2(){
+    const type=document.querySelector('input[name="type2"]:checked').value, pi2=2*Math.PI;
+    if(type==='passe-bande'){
+      const R=parseFloat(document.getElementById('rbo2').value),Cv=parseFloat(document.getElementById('cbo2').value),Cu=parseFloat(document.getElementById('cbu2').value),C=Cv*Cu,Q=parseFloat(document.getElementById('qo2').value);
+      if([R,Cv,Q].some(v=>isNaN(v)||v<=0)){err2('Saisis des valeurs valides.');return;}
+      const f0=1/(pi2*R*C),BW=f0/Q;
+      ok2('Fréquence centrale (f0)',fmtF(f0),`Bande passante : ${fmtF(BW)} · Q=${Q}`);
+    } else {
+      const R1=parseFloat(document.getElementById('r1o2').value),R2=parseFloat(document.getElementById('r2o2').value);
+      const C1=parseFloat(document.getElementById('c1o2').value)*parseFloat(document.getElementById('c1u2').value);
+      const C2=parseFloat(document.getElementById('c2o2').value)*parseFloat(document.getElementById('c2u2').value);
+      if([R1,R2].some(v=>isNaN(v)||v<=0)||isNaN(C1)||isNaN(C2)){err2('Saisis des valeurs valides.');return;}
+      const fc=1/(pi2*Math.sqrt(R1*R2*C1*C2)),Q=Math.sqrt(R1*R2*C1*C2)/(C2*(R1+R2));
+      ok2('Fréquence de coupure (fc)',fmtF(fc),`R1=${fmtR(R1)} R2=${fmtR(R2)} C1=${fmtC(C1)} C2=${fmtC(C2)} · Q=${Q.toFixed(3)}`);
+    }
+  }
+
+  function ok1(l,v,d){const b=document.getElementById('res1');b.className='result-box visible';document.getElementById('res1-l').textContent=l;document.getElementById('res1-v').textContent=v;document.getElementById('res1-d').textContent=d;}
+  function ok2(l,v,d){const b=document.getElementById('res2');b.className='result-box visible';document.getElementById('res2-l').textContent=l;document.getElementById('res2-v').textContent=v;document.getElementById('res2-d').textContent=d;}
+  function err1(m){document.getElementById('res1').className='result-box result-error visible';document.getElementById('res1-v').textContent=m;document.getElementById('res1-d').textContent='';}
+  function err2(m){document.getElementById('res2').className='result-box result-error visible';document.getElementById('res2-v').textContent=m;document.getElementById('res2-d').textContent='';}
+  function reset1(){document.querySelectorAll('#fields1 input').forEach(i=>i.value='');document.getElementById('res1').className='result-box';}
+  function reset2(){['r1o2','r2o2','c1o2','c2o2','rbo2','cbo2'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('qo2').value='0.707';document.getElementById('res2').className='result-box';}
+</script>
+</body>
+</html>

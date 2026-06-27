@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pont diviseur de tension — Calcul Vout, R1, R2 — CaCore</title>
+  <meta name="description" content="Calcule la tension de sortie Vout, R1 ou R2 d'un pont diviseur de tension. Formule Vout = Vin × R2/(R1+R2)." />
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="../../index.html">Accueil</a> ›
+      <a href="../electronique.html">Électronique</a> ›
+      <span>Pont diviseur de tension</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>➗ Pont diviseur de tension</h1>
+      <p>Calcule Vout, R1 ou R2 dans un pont diviseur résistif.</p>
+    </div>
+
+    <div class="calc-card">
+      <h2>Valeur à calculer</h2>
+      <div class="radio-group">
+        <input type="radio" name="target" id="t-vout" value="Vout" checked/><label for="t-vout">Tension sortie (Vout)</label>
+        <input type="radio" name="target" id="t-r1" value="R1"/><label for="t-r1">Résistance R1</label>
+        <input type="radio" name="target" id="t-r2" value="R2"/><label for="t-r2">Résistance R2</label>
+      </div>
+      <div class="fields" id="div-fields"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calculer()">Calculer</button>
+        <button class="btn btn-secondary" onclick="reset()">Réinitialiser</button>
+      </div>
+      <div class="result-box" id="result">
+        <div class="result-label" id="r-label">Résultat</div>
+        <div class="result-value" id="r-value">—</div>
+        <div class="result-detail" id="r-detail"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Comment ça marche</h3>
+      <p>Le pont diviseur est un montage fondamental qui permet d'obtenir une tension inférieure à la tension d'entrée. Il est utilisé pour alimenter des capteurs, interfacer des composants de tensions différentes, ou créer une tension de référence.</p>
+      <div style="font-family:var(--font-mono);font-size:.78rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin:16px 0;white-space:pre;line-height:1.8">Vin ──[ R1 ]──┬── Vout
+              │
+            [ R2 ]
+              │
+             GND</div>
+      <div class="formula-row">
+        <span class="formula-pill">Vout = Vin × R2 / (R1 + R2)</span>
+      </div>
+      <p style="margin-top:14px;font-size:.85rem;color:var(--muted)">⚠️ Ce calcul suppose une charge infinie sur Vout. En pratique, la charge connectée modifie le résultat si son impédance est comparable à R2.</p>
+    </div>
+
+    <a href="../../comprendre/lycee/loi-ohm.html" class="tool-card" style="margin-top:12px;flex-direction:row;align-items:center;gap:16px;text-decoration:none">
+      <span style="font-size:1.5rem">📚</span>
+      <div>
+        <div style="font-family:var(--font-mono);font-size:.85rem;color:var(--white)">Comprendre cette notion</div>
+        <div style="font-size:.8rem;color:var(--muted)">Loi d'Ohm et circuits résistifs — fiche complète</div>
+      </div>
+      <span class="tool-card-link" style="margin-left:auto">Lire →</span>
+    </a>
+
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="../../nav.js"></script>
+<script>
+  const defs={
+    Vin: {label:'Tension entrée (Vin)',ph:'ex : 12',unit:'Volts (V)'},
+    Vout:{label:'Tension sortie (Vout)',ph:'ex : 3.3',unit:'Volts (V)'},
+    R1:  {label:'Résistance R1',ph:'ex : 10000',unit:'Ohms (Ω)'},
+    R2:  {label:'Résistance R2',ph:'ex : 3300',unit:'Ohms (Ω)'},
+  };
+
+  function buildFields(){
+    const t=document.querySelector('input[name="target"]:checked').value;
+    const keys=['Vin','Vout','R1','R2'].filter(k=>k!==t);
+    document.getElementById('div-fields').innerHTML=keys.map(k=>`<div class="field"><label for="i-${k}">${defs[k].label}</label><input type="number" id="i-${k}" placeholder="${defs[k].ph}" min="0" step="any"/><span class="unit">${defs[k].unit}</span></div>`).join('');
+    hide();
+  }
+  document.querySelectorAll('input[name="target"]').forEach(r=>r.addEventListener('change',buildFields));
+  buildFields();
+
+  function g(id){return parseFloat(document.getElementById('i-'+id)?.value);}
+  function fmtV(v){return v>=1000?(v/1000).toPrecision(4)+' kV':v<0.001?(v*1000).toPrecision(4)+' mV':parseFloat(v.toPrecision(5))+' V';}
+  function fmtR(v){return v>=1e6?(v/1e6).toPrecision(4)+' MΩ':v>=1e3?(v/1e3).toPrecision(4)+' kΩ':parseFloat(v.toPrecision(4))+' Ω';}
+
+  function calculer(){
+    const t=document.querySelector('input[name="target"]:checked').value;
+    if(t==='Vout'){
+      const Vin=g('Vin'),R1=g('R1'),R2=g('R2');
+      if([Vin,R1,R2].some(v=>isNaN(v)||v<=0))return err('Saisis des valeurs valides.');
+      const Vout=Vin*R2/(R1+R2);
+      ok('Tension de sortie (Vout)',fmtV(Vout),`Rapport : ${(R2/(R1+R2)*100).toFixed(1)} % de Vin · Vin=${fmtV(Vin)} · R1=${fmtR(R1)} · R2=${fmtR(R2)}`);
+    } else if(t==='R1'){
+      const Vin=g('Vin'),Vout=g('Vout'),R2=g('R2');
+      if([Vin,Vout,R2].some(v=>isNaN(v)||v<=0))return err('Saisis des valeurs valides.');
+      if(Vout>=Vin)return err('Vout doit être inférieure à Vin.');
+      const R1=R2*(Vin-Vout)/Vout;
+      ok('Résistance R1',fmtR(R1),`Vin=${fmtV(Vin)} · Vout=${fmtV(Vout)} · R2=${fmtR(R2)}`);
+    } else {
+      const Vin=g('Vin'),Vout=g('Vout'),R1=g('R1');
+      if([Vin,Vout,R1].some(v=>isNaN(v)||v<=0))return err('Saisis des valeurs valides.');
+      if(Vout>=Vin)return err('Vout doit être inférieure à Vin.');
+      const R2=R1*Vout/(Vin-Vout);
+      ok('Résistance R2',fmtR(R2),`Vin=${fmtV(Vin)} · Vout=${fmtV(Vout)} · R1=${fmtR(R1)}`);
+    }
+  }
+  function ok(l,v,d){document.getElementById('result').className='result-box visible';document.getElementById('r-label').textContent=l;document.getElementById('r-value').textContent=v;document.getElementById('r-detail').textContent=d;}
+  function err(m){document.getElementById('result').className='result-box result-error visible';document.getElementById('r-label').textContent='Erreur';document.getElementById('r-value').textContent=m;document.getElementById('r-detail').textContent='';}
+  function hide(){document.getElementById('result').className='result-box';}
+  function reset(){document.querySelectorAll('#div-fields input').forEach(i=>i.value='');hide();}
+</script>
+</body>
+</html>

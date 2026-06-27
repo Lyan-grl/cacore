@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Énergie électrique consommée — Calcul Wh et kWh — CaCore</title>
+  <meta name="description" content="Calcule l'énergie électrique consommée en Wh ou kWh selon la puissance et la durée d'utilisation. E = P × t." />
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="../../index.html">Accueil</a> ›
+      <a href="../electronique.html">Électronique</a> ›
+      <span>Énergie consommée</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>⚡ Énergie électrique consommée</h1>
+      <p>Calcule l'énergie consommée par un appareil selon sa puissance et sa durée d'utilisation.</p>
+    </div>
+
+    <div class="calc-card">
+      <h2>Valeur à calculer</h2>
+      <div class="radio-group">
+        <input type="radio" name="target" id="t-e" value="E" checked/><label for="t-e">Énergie (E)</label>
+        <input type="radio" name="target" id="t-p" value="P"/><label for="t-p">Puissance (P)</label>
+        <input type="radio" name="target" id="t-t" value="t"/><label for="t-t">Durée (t)</label>
+      </div>
+      <div class="fields" id="en-fields"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calculer()">Calculer</button>
+        <button class="btn btn-secondary" onclick="reset()">Réinitialiser</button>
+      </div>
+      <div class="result-box" id="result">
+        <div class="result-label" id="r-label">Résultat</div>
+        <div class="result-value" id="r-value">—</div>
+        <div class="result-detail" id="r-detail"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Comment ça marche</h3>
+      <p>L'énergie électrique est le produit de la puissance par la durée d'utilisation. Elle s'exprime en wattheures (Wh) ou en kilowattheures (kWh) pour les grandes quantités.</p>
+      <div class="formula-row">
+        <span class="formula-pill">E (Wh) = P (W) × t (h)</span>
+        <span class="formula-pill">E (J) = P (W) × t (s)</span>
+      </div>
+      <p style="margin-top:14px;font-size:.85rem;color:var(--muted)">1 kWh = 1000 Wh · Sur ta facture EDF, tu paies en kWh (~0.25 €/kWh en France en 2024).</p>
+    </div>
+
+    <a href="../../comprendre/lycee/puissance.html" class="tool-card" style="margin-top:12px;flex-direction:row;align-items:center;gap:16px;text-decoration:none">
+      <span style="font-size:1.5rem">📚</span>
+      <div>
+        <div style="font-family:var(--font-mono);font-size:.85rem;color:var(--white)">Comprendre cette notion</div>
+        <div style="font-size:.8rem;color:var(--muted)">Puissance et énergie électrique — fiche complète</div>
+      </div>
+      <span class="tool-card-link" style="margin-left:auto">Lire →</span>
+    </a>
+
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="../../nav.js"></script>
+<script>
+  const defs={
+    E:{label:'Énergie (E)',ph:'ex : 100',unit:'Wh'},
+    P:{label:'Puissance (P)',ph:'ex : 60',unit:'Watts (W)'},
+    t:{label:'Durée (t)',ph:'ex : 2.5',unit:'Heures (h)'},
+  };
+
+  function build(){
+    const target=document.querySelector('input[name="target"]:checked').value;
+    document.getElementById('en-fields').innerHTML=['E','P','t'].filter(k=>k!==target).map(k=>`<div class="field"><label for="i-${k}">${defs[k].label}</label><input type="number" id="i-${k}" placeholder="${defs[k].ph}" min="0" step="any"/><span class="unit">${defs[k].unit}</span></div>`).join('');
+    hide();
+  }
+  document.querySelectorAll('input[name="target"]').forEach(r=>r.addEventListener('change',build));
+  build();
+
+  function g(id){return parseFloat(document.getElementById('i-'+id).value);}
+
+  function fmtE(v){
+    if(v>=1e6) return (v/1e6).toPrecision(4)+' MWh';
+    if(v>=1000) return (v/1000).toPrecision(4)+' kWh';
+    if(v<0.001) return (v*1000).toPrecision(4)+' mWh';
+    return parseFloat(v.toPrecision(5))+' Wh';
+  }
+
+  function calculer(){
+    const target=document.querySelector('input[name="target"]:checked').value;
+    if(target==='E'){
+      const P=g('P'),t=g('t');
+      if([P,t].some(v=>isNaN(v)||v<=0))return err('Saisis des valeurs valides.');
+      const E=P*t;
+      ok('Énergie consommée',fmtE(E),`P=${P} W × t=${t} h · En joules : ${(E*3600).toFixed(0)} J · Coût estimé : ${(E/1000*0.25).toFixed(4)} €`);
+    } else if(target==='P'){
+      const E=g('E'),t=g('t');
+      if([E,t].some(v=>isNaN(v)||v<=0))return err('Saisis des valeurs valides.');
+      ok('Puissance',`${parseFloat((E/t).toPrecision(5))} W`,`E=${E} Wh ÷ t=${t} h`);
+    } else {
+      const E=g('E'),P=g('P');
+      if([E,P].some(v=>isNaN(v)||v<=0))return err('Saisis des valeurs valides.');
+      const h=E/P, hh=Math.floor(h), mm=Math.round((h-hh)*60);
+      ok('Durée',`${hh}h ${String(mm).padStart(2,'0')}min`,`E=${E} Wh ÷ P=${P} W = ${h.toFixed(3)} h`);
+    }
+  }
+  function ok(l,v,d){document.getElementById('result').className='result-box visible';document.getElementById('r-label').textContent=l;document.getElementById('r-value').textContent=v;document.getElementById('r-detail').textContent=d;}
+  function err(m){document.getElementById('result').className='result-box result-error visible';document.getElementById('r-label').textContent='Erreur';document.getElementById('r-value').textContent=m;document.getElementById('r-detail').textContent='';}
+  function hide(){document.getElementById('result').className='result-box';}
+  function reset(){document.querySelectorAll('#en-fields input').forEach(i=>i.value='');hide();}
+</script>
+</body>
+</html>

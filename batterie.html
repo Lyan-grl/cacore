@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autonomie batterie mAh — Calculateur — CaCore</title>
+  <meta name="description" content="Calcule l'autonomie d'une batterie selon sa capacité (mAh) et la consommation du circuit. Résultat en heures et minutes." />
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="../../index.html">Accueil</a> ›
+      <a href="../electronique.html">Électronique</a> ›
+      <span>Autonomie batterie</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>🔌 Autonomie batterie</h1>
+      <p>Estime combien de temps une batterie peut alimenter ton circuit.</p>
+    </div>
+
+    <div class="calc-card">
+      <h2>Données</h2>
+      <div class="fields">
+        <div class="field">
+          <label for="mah">Capacité batterie</label>
+          <input type="number" id="mah" placeholder="ex : 2000" min="0" step="any"/>
+          <span class="unit">Milliampères-heure (mAh)</span>
+        </div>
+        <div class="field">
+          <label for="conso">Consommation du circuit</label>
+          <input type="number" id="conso" placeholder="ex : 50" min="0" step="any"/>
+          <span class="unit">Milliampères (mA)</span>
+        </div>
+        <div class="field">
+          <label for="eff">Efficacité estimée</label>
+          <input type="number" id="eff" placeholder="85" min="1" max="100" step="1" value="85"/>
+          <span class="unit">% (80–90 % recommandé)</span>
+        </div>
+      </div>
+      <details style="margin-bottom:20px">
+        <summary style="font-size:.82rem;color:var(--muted);cursor:pointer;font-family:var(--font-mono)">Consommations typiques ▾</summary>
+        <div style="margin-top:10px;font-size:.82rem;color:var(--muted);line-height:1.9">
+          Arduino Uno actif : ~50 mA · Arduino Uno sleep : ~20 mA<br>
+          ESP32 actif Wi-Fi : ~160–240 mA · ESP32 deep sleep : ~0.01 mA<br>
+          Raspberry Pi Zero 2W : ~300 mA · LED standard : 20 mA
+        </div>
+      </details>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calculer()">Calculer</button>
+        <button class="btn btn-secondary" onclick="reset()">Réinitialiser</button>
+      </div>
+      <div class="result-box" id="result">
+        <div class="result-label">Autonomie estimée</div>
+        <div class="result-value" id="r-value">—</div>
+        <div class="result-detail" id="r-detail"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Comment ça marche</h3>
+      <p>La durée est obtenue en divisant la capacité par le courant consommé. Le facteur d'efficacité tient compte des pertes (régulateur, température, vieillissement).</p>
+      <div class="formula-row"><span class="formula-pill">t = (mAh × efficacité) / I(mA)</span></div>
+      <p style="margin-top:14px;font-size:.85rem;color:var(--muted)">La durée réelle peut varier selon la température et le type de batterie (Li-ion, NiMH, alcaline…).</p>
+    </div>
+
+    <a href="../../comprendre/lycee/puissance.html" class="tool-card" style="margin-top:12px;flex-direction:row;align-items:center;gap:16px;text-decoration:none">
+      <span style="font-size:1.5rem">📚</span>
+      <div>
+        <div style="font-family:var(--font-mono);font-size:.85rem;color:var(--white)">Comprendre cette notion</div>
+        <div style="font-size:.8rem;color:var(--muted)">Énergie et puissance électrique — fiche complète</div>
+      </div>
+      <span class="tool-card-link" style="margin-left:auto">Lire →</span>
+    </a>
+
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="../../nav.js"></script>
+<script>
+  function calculer(){
+    const mah=parseFloat(document.getElementById('mah').value);
+    const conso=parseFloat(document.getElementById('conso').value);
+    const eff=parseFloat(document.getElementById('eff').value);
+    if([mah,conso,eff].some(isNaN)||mah<=0||conso<=0||eff<=0){err('Saisis des valeurs valides.');return;}
+    const h2=(mah*(eff/100))/conso, h=Math.floor(h2), min=Math.round((h2-h)*60);
+    let display=h2<1?`${min} minute${min>1?'s':''}`:h2>=24?`${(h2/24).toFixed(1)} jours (${h}h${String(min).padStart(2,'0')})`:`${h}h ${String(min).padStart(2,'0')}min`;
+    document.getElementById('result').className='result-box visible';
+    document.getElementById('r-value').textContent=display;
+    document.getElementById('r-detail').textContent=`Batterie : ${mah} mAh · Conso : ${conso} mA · Efficacité : ${eff} % · Durée brute : ${h2.toFixed(2)} h`;
+  }
+  function err(m){document.getElementById('result').className='result-box result-error visible';document.getElementById('r-value').textContent=m;document.getElementById('r-detail').textContent='';}
+  function reset(){['mah','conso'].forEach(id=>document.getElementById(id).value='');document.getElementById('eff').value='85';document.getElementById('result').className='result-box';}
+</script>
+</body>
+</html>

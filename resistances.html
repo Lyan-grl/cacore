@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Résistances série et parallèle — Résistance équivalente — CaCore</title>
+  <meta name="description" content="Calcule la résistance équivalente de plusieurs résistances en série ou en parallèle. Ajoute autant de résistances que tu veux." />
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="../../index.html">Accueil</a> ›
+      <a href="../electronique.html">Électronique</a> ›
+      <span>Résistances série / parallèle</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>〰️ Résistances série / parallèle</h1>
+      <p>Calcule la résistance équivalente de plusieurs résistances. Ajoute autant de résistances que nécessaire.</p>
+    </div>
+
+    <div class="calc-card">
+      <h2>Mode de montage</h2>
+      <div class="radio-group">
+        <input type="radio" name="mode" id="mode-serie" value="serie" checked />
+        <label for="mode-serie">Série</label>
+        <input type="radio" name="mode" id="mode-para" value="parallele" />
+        <label for="mode-para">Parallèle</label>
+      </div>
+      <div class="resistor-list" id="r-list"></div>
+      <button class="btn btn-secondary" onclick="addR()" style="margin-bottom:24px">+ Ajouter une résistance</button>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calculer()">Calculer</button>
+        <button class="btn btn-secondary" onclick="reset()">Réinitialiser</button>
+      </div>
+      <div class="result-box" id="result">
+        <div class="result-label" id="r-label">Résistance équivalente</div>
+        <div class="result-value" id="r-value">—</div>
+        <div class="result-detail" id="r-detail"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Comment ça marche</h3>
+      <p><strong style="color:var(--white)">En série</strong> : les résistances s'additionnent directement.</p>
+      <div class="formula-row" style="margin-bottom:16px"><span class="formula-pill">Req = R1 + R2 + R3 + …</span></div>
+      <p><strong style="color:var(--white)">En parallèle</strong> : l'inverse de l'équivalente est la somme des inverses.</p>
+      <div class="formula-row"><span class="formula-pill">1/Req = 1/R1 + 1/R2 + 1/R3 + …</span></div>
+      <p style="margin-top:14px;font-size:.85rem;color:var(--muted)">En parallèle, Req est toujours inférieure à la plus petite résistance du montage.</p>
+    </div>
+
+    <a href="../../comprendre/lycee/loi-ohm.html" class="tool-card" style="margin-top:12px;flex-direction:row;align-items:center;gap:16px;text-decoration:none">
+      <span style="font-size:1.5rem">📚</span>
+      <div>
+        <div style="font-family:var(--font-mono);font-size:.85rem;color:var(--white)">Comprendre cette notion</div>
+        <div style="font-size:.8rem;color:var(--muted)">Circuits série et parallèle — fiche complète</div>
+      </div>
+      <span class="tool-card-link" style="margin-left:auto">Lire →</span>
+    </a>
+
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="../../nav.js"></script>
+<script>
+  let count=0;
+  function addR(val=''){
+    count++;
+    const li=document.createElement('div');
+    li.className='resistor-item'; li.id='ri-'+count;
+    li.innerHTML=`<span class="mono">R${count}</span><input type="number" id="r-${count}" placeholder="ex : 470" min="0" step="any" value="${val}"/><span class="mono">Ω</span><button class="btn-remove" onclick="document.getElementById('ri-${count}').remove()" title="Supprimer">✕</button>`;
+    document.getElementById('r-list').appendChild(li);
+  }
+  addR(100); addR(220); addR(470);
+
+  function fmtR(v){return v>=1e6?(v/1e6).toPrecision(5)+' MΩ':v>=1e3?(v/1e3).toPrecision(5)+' kΩ':parseFloat(v.toPrecision(5))+' Ω';}
+
+  function calculer(){
+    const vals=Array.from(document.querySelectorAll('#r-list input')).map(i=>parseFloat(i.value)).filter(v=>!isNaN(v)&&v>0);
+    if(vals.length<2){err('Saisis au moins 2 valeurs valides.');return;}
+    const mode=document.querySelector('input[name="mode"]:checked').value;
+    const req=mode==='serie'?vals.reduce((s,r)=>s+r,0):1/vals.reduce((s,r)=>s+1/r,0);
+    document.getElementById('result').className='result-box visible';
+    document.getElementById('r-label').textContent=`Résistance équivalente (${mode})`;
+    document.getElementById('r-value').textContent=fmtR(req);
+    document.getElementById('r-detail').textContent=`${vals.length} résistances · ${vals.map(fmtR).join(' + ')}`;
+  }
+  function err(m){document.getElementById('result').className='result-box result-error visible';document.getElementById('r-value').textContent=m;document.getElementById('r-detail').textContent='';}
+  function reset(){document.getElementById('r-list').innerHTML='';count=0;addR();addR();addR();document.getElementById('result').className='result-box';}
+</script>
+</body>
+</html>

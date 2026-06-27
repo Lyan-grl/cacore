@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code couleur des résistances — Lecture des bandes — CaCore</title>
+  <meta name="description" content="Lis facilement la valeur d'une résistance à partir de ses bandes de couleur. Résistances 4 et 5 bandes supportées." />
+  <link rel="stylesheet" href="../../style.css" />
+  <style>
+    .band-selector { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; align-items:flex-end; }
+    .band-group { display:flex; flex-direction:column; gap:6px; }
+    .band-group label { font-family:var(--font-mono); font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .band-group select { font-family:var(--font-mono); font-size:.9rem; padding:10px 12px; border-radius:6px; border:2px solid var(--border); background:var(--bg); color:var(--white); outline:none; cursor:pointer; min-width:110px; transition:border-color .2s; }
+    .band-group select:focus { border-color:var(--accent); }
+    .band-preview { display:flex; gap:0; height:32px; border-radius:6px; overflow:hidden; margin-bottom:24px; border:1px solid var(--border); }
+    .band-strip { flex:1; transition:background .2s; }
+    .band-body { flex:4; background:#c8a87a; }
+  </style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="calc-page">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="../../index.html">Accueil</a> ›
+      <a href="../electronique.html">Électronique</a> ›
+      <span>Code couleur</span>
+    </div>
+
+    <div class="calc-header">
+      <h1>🌈 Code couleur des résistances</h1>
+      <p>Lis la valeur d'une résistance à partir de ses bandes de couleur — 4 ou 5 bandes.</p>
+    </div>
+
+    <div class="calc-card">
+      <h2>Nombre de bandes</h2>
+      <div class="radio-group" style="margin-bottom:24px">
+        <input type="radio" name="nbandes" id="nb4" value="4" checked/><label for="nb4">4 bandes</label>
+        <input type="radio" name="nbandes" id="nb5" value="5"/><label for="nb5">5 bandes</label>
+      </div>
+
+      <!-- Aperçu visuel -->
+      <div class="band-preview" id="band-preview">
+        <div class="band-strip" id="prev-1"></div>
+        <div class="band-body"></div>
+        <div class="band-strip" id="prev-2"></div>
+        <div class="band-body"></div>
+        <div class="band-strip" id="prev-3" style="display:none"></div>
+        <div class="band-body" id="prev-body3" style="display:none"></div>
+        <div class="band-strip" id="prev-mult"></div>
+        <div class="band-body"></div>
+        <div class="band-strip" id="prev-tol"></div>
+      </div>
+
+      <div class="band-selector" id="band-selector"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calculer()">Lire la valeur</button>
+        <button class="btn btn-secondary" onclick="reset()">Réinitialiser</button>
+      </div>
+
+      <div class="result-box" id="result">
+        <div class="result-label">Valeur de la résistance</div>
+        <div class="result-value" id="r-value">—</div>
+        <div class="result-detail" id="r-detail"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>Comment lire le code couleur</h3>
+      <p>Chaque bande correspond à un chiffre ou un multiplicateur. La dernière bande (souvent or ou argent) indique la tolérance.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:12px;font-family:var(--font-mono);font-size:.78rem">
+        <div style="padding:6px 10px;border-radius:6px;background:#1a1a1a;border:2px solid #1a1a1a;color:#fff">⬛ Noir = 0</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#6b3a1f;border:2px solid #6b3a1f;color:#fff">🟫 Marron = 1</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#c0392b;border:2px solid #c0392b;color:#fff">🟥 Rouge = 2</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#e67e22;border:2px solid #e67e22;color:#fff">🟧 Orange = 3</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#f1c40f;border:2px solid #f1c40f;color:#1a1a1a">🟨 Jaune = 4</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#27ae60;border:2px solid #27ae60;color:#fff">🟩 Vert = 5</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#2980b9;border:2px solid #2980b9;color:#fff">🟦 Bleu = 6</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#8e44ad;border:2px solid #8e44ad;color:#fff">🟪 Violet = 7</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#7f8c8d;border:2px solid #7f8c8d;color:#fff">⬜ Gris = 8</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#ecf0f1;border:2px solid #bdc3c7;color:#1a1a1a">⬜ Blanc = 9</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#d4a017;border:2px solid #d4a017;color:#fff">🥇 Or = ×0.1 / ±5%</div>
+        <div style="padding:6px 10px;border-radius:6px;background:#95a5a6;border:2px solid #95a5a6;color:#fff">🥈 Argent = ×0.01 / ±10%</div>
+      </div>
+    </div>
+
+    <a href="../../comprendre/lycee/loi-ohm.html" class="tool-card" style="margin-top:12px;flex-direction:row;align-items:center;gap:16px;text-decoration:none">
+      <span style="font-size:1.5rem">📚</span>
+      <div>
+        <div style="font-family:var(--font-mono);font-size:.85rem;color:var(--white)">Comprendre cette notion</div>
+        <div style="font-size:.8rem;color:var(--muted)">Résistances — valeurs, tolérances, séries E</div>
+      </div>
+      <span class="tool-card-link" style="margin-left:auto">Lire →</span>
+    </a>
+
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="../../nav.js"></script>
+<script>
+  const COLORS = [
+    {name:'Noir',   hex:'#1a1a1a', digit:0,  mult:1,      tol:null},
+    {name:'Marron', hex:'#6b3a1f', digit:1,  mult:10,     tol:'±1%'},
+    {name:'Rouge',  hex:'#c0392b', digit:2,  mult:100,    tol:'±2%'},
+    {name:'Orange', hex:'#e67e22', digit:3,  mult:1000,   tol:null},
+    {name:'Jaune',  hex:'#f1c40f', digit:4,  mult:10000,  tol:null},
+    {name:'Vert',   hex:'#27ae60', digit:5,  mult:100000, tol:'±0.5%'},
+    {name:'Bleu',   hex:'#2980b9', digit:6,  mult:1e6,    tol:'±0.25%'},
+    {name:'Violet', hex:'#8e44ad', digit:7,  mult:1e7,    tol:'±0.1%'},
+    {name:'Gris',   hex:'#7f8c8d', digit:8,  mult:1e8,    tol:'±0.05%'},
+    {name:'Blanc',  hex:'#ecf0f1', digit:9,  mult:1e9,    tol:null},
+    {name:'Or',     hex:'#d4a017', digit:null,mult:0.1,   tol:'±5%'},
+    {name:'Argent', hex:'#95a5a6', digit:null,mult:0.01,  tol:'±10%'},
+  ];
+
+  function makeOptions(includeNull=false, onlyDigits=false, onlyTol=false) {
+    return COLORS.filter(c => {
+      if(onlyDigits && c.digit===null) return false;
+      if(onlyTol && !c.tol) return false;
+      return true;
+    }).map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  }
+
+  function buildSelector() {
+    const n = parseInt(document.querySelector('input[name="nbandes"]:checked').value);
+    const sel = document.getElementById('band-selector');
+    sel.innerHTML = '';
+
+    const bands = n===4
+      ? [{id:'b1',label:'Bande 1',opts:makeOptions(false,true)},{id:'b2',label:'Bande 2',opts:makeOptions(false,true)},{id:'bm',label:'Multiplic.',opts:makeOptions()},{id:'bt',label:'Tolérance',opts:makeOptions(false,false,true)}]
+      : [{id:'b1',label:'Bande 1',opts:makeOptions(false,true)},{id:'b2',label:'Bande 2',opts:makeOptions(false,true)},{id:'b3',label:'Bande 3',opts:makeOptions(false,true)},{id:'bm',label:'Multiplic.',opts:makeOptions()},{id:'bt',label:'Tolérance',opts:makeOptions(false,false,true)}];
+
+    bands.forEach(b=>{
+      sel.innerHTML+=`<div class="band-group"><label>${b.label}</label><select id="${b.id}" onchange="updatePreview()">${b.opts}</select></div>`;
+    });
+
+    // Defaults
+    if(n===4){document.getElementById('bt').value='Or';}
+    else{document.getElementById('bt').value='Marron';}
+
+    // 3e bande preview
+    document.getElementById('prev-3').style.display = n===5?'block':'none';
+    document.getElementById('prev-body3').style.display = n===5?'block':'none';
+
+    updatePreview();
+    hide();
+  }
+
+  document.querySelectorAll('input[name="nbandes"]').forEach(r=>r.addEventListener('change',buildSelector));
+  buildSelector();
+
+  function getColor(name){return COLORS.find(c=>c.name===name);}
+
+  function updatePreview(){
+    const n=parseInt(document.querySelector('input[name="nbandes"]:checked').value);
+    const set=(id,name)=>{const el=document.getElementById(id);if(el&&name){const c=getColor(name);if(c)el.style.background=c.hex;}};
+    set('prev-1',document.getElementById('b1')?.value);
+    set('prev-2',document.getElementById('b2')?.value);
+    if(n===5) set('prev-3',document.getElementById('b3')?.value);
+    set('prev-mult',document.getElementById('bm')?.value);
+    set('prev-tol',document.getElementById('bt')?.value);
+  }
+
+  function fmtR(v){
+    if(v>=1e6) return (v/1e6).toPrecision(4)+' MΩ';
+    if(v>=1e3) return (v/1e3).toPrecision(4)+' kΩ';
+    return parseFloat(v.toPrecision(4))+' Ω';
+  }
+
+  function calculer(){
+    const n=parseInt(document.querySelector('input[name="nbandes"]:checked').value);
+    const c1=getColor(document.getElementById('b1').value);
+    const c2=getColor(document.getElementById('b2').value);
+    const c3=n===5?getColor(document.getElementById('b3').value):null;
+    const cm=getColor(document.getElementById('bm').value);
+    const ct=getColor(document.getElementById('bt').value);
+
+    let base;
+    if(n===4) base=c1.digit*10+c2.digit;
+    else base=c1.digit*100+c2.digit*10+c3.digit;
+
+    const val=base*cm.mult;
+    const tol=ct.tol||'?';
+    const min=val*(1-(parseFloat(tol)/100||0)), max=val*(1+(parseFloat(tol)/100||0));
+
+    document.getElementById('result').className='result-box visible';
+    document.getElementById('r-value').textContent=fmtR(val)+' '+tol;
+    document.getElementById('r-detail').textContent=`Plage : ${fmtR(min)} — ${fmtR(max)} · Valeur exacte : ${val} Ω`;
+  }
+
+  function hide(){document.getElementById('result').className='result-box';}
+  function reset(){buildSelector();}
+</script>
+</body>
+</html>
